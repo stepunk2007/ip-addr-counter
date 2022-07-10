@@ -14,9 +14,9 @@ public class UniqueIpCounter {
     public static long readAndCount(String path) throws IOException {
         AtomicLong totalCounter = new AtomicLong(0);
         Map<String, Map<String, Map<String, Map<String, Boolean>>>> container = new ConcurrentHashMap<>();
-        Stream<String> lines = Files.lines(Paths.get(path));
-        lines.parallel().forEach(s -> compute(totalCounter, container, s));
-        lines.close();
+        try(Stream<String> lines = Files.lines(Paths.get(path))) {
+            lines.parallel().forEach(s -> compute(totalCounter, container, s));
+        }
         return totalCounter.getAcquire();
     }
 
