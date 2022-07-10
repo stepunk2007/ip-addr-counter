@@ -24,7 +24,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.myasnykh.stepan.Main</mainClass>
+                            <mainClass>com.myasnykh.stepan.UniqueIpCounterApp</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
