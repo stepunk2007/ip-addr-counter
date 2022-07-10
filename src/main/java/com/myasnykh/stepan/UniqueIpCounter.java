@@ -13,28 +13,37 @@ public class UniqueIpCounter {
 
     public static long readAndCount(String path) throws IOException {
         AtomicLong totalCounter = new AtomicLong(0);
-        Map<String, Map<String, Map<String, Map<String, Boolean>>>> container = new ConcurrentHashMap<>();
-        try(Stream<String> lines = Files.lines(Paths.get(path))) {
+        Map<String, Boolean>[][][] container = createContainer();
+        try (Stream<String> lines = Files.lines(Paths.get(path))) {
             lines.parallel().forEach(s -> compute(totalCounter, container, s));
         }
         return totalCounter.getAcquire();
     }
 
-    private static void compute(AtomicLong totalCounter, Map<String, Map<String, Map<String, Map<String, Boolean>>>> container, String s) {
+    private static Map<String, Boolean>[][][] createContainer() {
+        Map<String, Boolean>[][][] container = new ConcurrentHashMap[256][256][256];
+        for (int i = 0; i < 256; i++) {
+            Map<String, Boolean>[][] firstOctet = new ConcurrentHashMap[256][256];
+            container[i] = firstOctet;
+            for (int j = 0; j < 256; j++) {
+                Map<String, Boolean>[] secondOctet = new ConcurrentHashMap[256];
+                container[i][j] = secondOctet;
+            }
+        }
+        return container;
+    }
+
+    private static void compute(AtomicLong totalCounter, Map<String, Boolean>[][][] container, String s) {
         String[] octets = s.split(POINT);
-        Map<String, Map<String, Map<String, Boolean>>> firstOctet = container.get(octets[0]);
-        if (firstOctet == null) {
-            firstOctet = container.computeIfAbsent(octets[0].intern(), k -> new ConcurrentHashMap<>());
-        }
+        Map<String, Boolean>[] secondOctet =  container[Integer.parseInt(octets[0])][Integer.parseInt(octets[1])];
 
-        Map<String, Map<String, Boolean>> secondOctet = firstOctet.get(octets[1]);
-        if (secondOctet == null) {
-            secondOctet = firstOctet.computeIfAbsent(octets[1].intern(), k -> new ConcurrentHashMap<>());
-        }
-
-        Map<String, Boolean> thirdOctet = secondOctet.get(octets[2]);
-        if (thirdOctet == null) {
-            thirdOctet = secondOctet.computeIfAbsent(octets[2].intern(), k -> new ConcurrentHashMap<>());
+        Map<String, Boolean> thirdOctet;
+        synchronized (secondOctet) {
+            thirdOctet = secondOctet[Integer.parseInt(octets[2])];
+            if (thirdOctet == null) {
+                thirdOctet = new ConcurrentHashMap<>();
+                secondOctet[Integer.parseInt(octets[2])] = thirdOctet;
+            }
         }
 
         Boolean exists = thirdOctet.get(octets[3]);
