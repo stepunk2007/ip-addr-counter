@@ -20,14 +20,10 @@ public class UniqueIpCounter {
 
     private static void compute(AtomicLong totalCounter, boolean[][][][] container, String s) {
         String[] octets = s.split(POINT);
-        boolean[][] secondOctet = container[Integer.parseInt(octets[0])][Integer.parseInt(octets[1])];
+        boolean[] thirdOctet= container[Integer.parseInt(octets[0])][Integer.parseInt(octets[1])][Integer.parseInt(octets[2])];
 
-        boolean[] thirdOctet= secondOctet[Integer.parseInt(octets[2])];
-
-        boolean exists;
         synchronized (thirdOctet) {
-            exists = thirdOctet[Integer.parseInt(octets[3])];
-            if (!exists) {
+            if (!thirdOctet[Integer.parseInt(octets[3])]) {
                 totalCounter.incrementAndGet();
                 thirdOctet[Integer.parseInt(octets[3])] = true;
             }
